@@ -12,7 +12,6 @@ using MarkPad.DocumentSources.WebSources;
 using MarkPad.Infrastructure;
 using MarkPad.Infrastructure.DialogService;
 using MarkPad.Plugins;
-using MarkPad.PreviewControl;
 using MarkPad.Settings.Models;
 
 namespace MarkPad.DocumentSources
@@ -72,12 +71,18 @@ namespace MarkPad.DocumentSources
 
             var associatedImages = GetAssociatedImages(contents, siteContext);
 
+            var context = siteContext as JekyllSiteContext;
+            if (context != null)
+            {
+                return new JekyllMarkdownDocument(path, contents, context, associatedImages, this, eventAggregator,
+                    dialogService, fileSystem);
+            }
             return new FileMarkdownDocument(path, contents, siteContext, associatedImages, this, eventAggregator, dialogService, fileSystem);
         }
 
         IEnumerable<FileReference> GetAssociatedImages(string markdownFileContents, ISiteContext siteContext)
         {
-            const string imageRegex = @"!\[(?<AltText>.*?)\]\((?<Link>.*?)\)";
+            const string imageRegex = @"!\[(?<AltText>.*?)\]\((?<Link>\S+?)\s*(?<OptionalTitle>("".*""){0,1}?)\)";
             var images = Regex.Matches(markdownFileContents, imageRegex);
             var associatedImages = new List<FileReference>();
 

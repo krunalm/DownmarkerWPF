@@ -9,7 +9,7 @@ using Caliburn.Micro;
 using Caliburn.Micro.Autofac;
 using MarkPad.Events;
 using MarkPad.Infrastructure.CaliburnExtensions;
-using MarkPad.PreviewControl;
+using MarkPad.Preview;
 
 namespace MarkPad.Infrastructure
 {
@@ -67,7 +67,13 @@ namespace MarkPad.Infrastructure
             Container.Resolve<IEventAggregator>().Publish(new AppReadyEvent());
 
             // Handle the original arguments from the first run of this app.
-            ((App)Application).HandleArguments(Environment.GetCommandLineArgs());
+            var activationArguments = AppDomain.CurrentDomain.SetupInformation.ActivationArguments;
+            if (activationArguments == null || activationArguments.ActivationData == null)
+                ((App)Application).HandleArguments(Environment.GetCommandLineArgs());
+            else
+            {
+                ((App)Application).HandleArguments(activationArguments.ActivationData);
+            }
         }
                 
         protected override void OnExit(object sender, EventArgs e)

@@ -6,12 +6,12 @@ using System.Windows.Threading;
 using Caliburn.Micro;
 using ICSharpCode.AvalonEdit.Document;
 using MarkPad.Document.Controls;
+using MarkPad.Document.EditorBehaviours;
 using MarkPad.Document.Search;
 using MarkPad.Document.SpellCheck;
 using MarkPad.Events;
 using MarkPad.Infrastructure.DialogService;
 using MarkPad.Plugins;
-using MarkPad.PreviewControl;
 using MarkPad.Settings;
 using MarkPad.Settings.Models;
 using Ookii.Dialogs.Wpf;
@@ -40,12 +40,14 @@ namespace MarkPad.Document
             IDialogService dialogService, 
             IWindowManager windowManager,
             ISettingsProvider settingsProvider,
-			IDocumentParser documentParser,
+            IDocumentParser documentParser,
             ISpellCheckProvider spellCheckProvider,
             ISearchProvider searchProvider,
-            IShell shell)
+            IShell shell,
+            IPairedCharsHighlightProvider pairedCharsHighlightProvider)
         {
             SpellCheckProvider = spellCheckProvider;
+            PairedCharsHighlightProvider = pairedCharsHighlightProvider;
             this.dialogService = dialogService;
             this.windowManager = windowManager;
             this.settingsProvider = settingsProvider;
@@ -75,7 +77,7 @@ namespace MarkPad.Document
                 return;
             timer.Stop();
 
-			Task.Factory.StartNew(text => documentParser.Parse(text.ToString()), Document.Text)
+            Task.Factory.StartNew(text => documentParser.Parse(text.ToString()), Document.Text)
             .ContinueWith(s =>
             {
                 if (s.IsFaulted)
@@ -232,7 +234,10 @@ namespace MarkPad.Document
                     {
                         finishedWork.Dispose();
                         if (t.IsCompleted)
+                        {
                             CheckAndCloseView();
+                            callback(true);
+                        }
                         else
                             callback(false);
                     }, TaskScheduler.FromCurrentSynchronizationContext());
@@ -253,6 +258,8 @@ namespace MarkPad.Document
         {
             if (SpellCheckProvider != null)
                 SpellCheckProvider.Disconnect();
+            if (PairedCharsHighlightProvider != null)
+                PairedCharsHighlightProvider.Disconnect();
             var disposableSiteContext = MarkpadDocument.SiteContext as IDisposable;
             if (disposableSiteContext != null)
                 disposableSiteContext.Dispose();
@@ -374,9 +381,12 @@ namespace MarkPad.Document
 
         public ISpellCheckProvider SpellCheckProvider { get; private set; }
 
+        public IPairedCharsHighlightProvider PairedCharsHighlightProvider { get; private set; }
+
         protected override void OnViewLoaded(object view)
         {
             SpellCheckProvider.Initialise((DocumentView)view);
+            PairedCharsHighlightProvider.Initialise((DocumentView)view);
             SearchProvider.Initialise((DocumentView)view);
             base.OnViewLoaded(view);
             NotifyOfPropertyChange(()=>View);

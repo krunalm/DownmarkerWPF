@@ -7,7 +7,7 @@
         x:Class="MarkPad.ShellView" xmlns:converters="clr-namespace:MarkPad.Converters" xmlns:commands="clr-namespace:MarkPad.Document.Commands"
         xmlns:search="clr-namespace:MarkPad.Document.Search" mc:Ignorable="d" MouseLeftButtonDown="DragMoveWindow" MouseMove="MouseMoveWindow"
         MouseDoubleClick="ShellViewMouseDoubleClick" DragOver="WindowDragOver" Icon="markpad.ico" SnapsToDevicePixels="True" AllowDrop="True"
-        x:Name="Window" d:DataContext="{d:DesignInstance {x:Type markPad:ShellViewModel}}" Closing="WindowClosing">
+        x:Name="Window" d:DataContext="{d:DesignInstance {x:Type markPad:ShellViewModel}}">
 
     <Window.Resources>
         <ResourceDictionary>
@@ -453,6 +453,15 @@
               Visibility="{Binding SearchingWithBar, Mode=TwoWay, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Border Background="#f0f0f0" BorderBrush="#999999" BorderThickness="1" CornerRadius="0" Padding="3,2,3,2" Margin="0">
                 <DockPanel Margin="2">
+                    <Button Content="Replace" Width="75" DockPanel.Dock="Right" Margin="5,0,0,0" ToolTip="Replace">
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="Click">
+                                <cm:ActionMessage MethodName="Search">
+                                    <cm:Parameter Value="{x:Static search:SearchType.Replace}" />
+                                </cm:ActionMessage>
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
+                    </Button>
                     <Button Content="Find prev" Width="75" DockPanel.Dock="Right" Margin="5,0,0,0" ToolTip="SHIFT + F3">
                         <i:Interaction.Triggers>
                             <i:EventTrigger EventName="Click">
@@ -498,24 +507,48 @@
                             </i:EventTrigger>
                         </i:Interaction.Triggers>
                     </ToggleButton>
-                    <TextBox Name="SearchTextBox" Text="{Binding SearchSettings.SearchTerm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             Margin="5,0,0,0" VerticalContentAlignment="Center">
-                        <i:Interaction.Triggers>
-                            <i:EventTrigger EventName="TextChanged">
-                                <cm:ActionMessage MethodName="Search">
-                                    <cm:Parameter Value="{x:Static search:SearchType.Normal}" />
-                                </cm:ActionMessage>
-                            </i:EventTrigger>
-                            <s:InputBindingTrigger>
-                                <s:InputBindingTrigger.InputBinding>
-                                    <KeyBinding Key="Enter" />
-                                </s:InputBindingTrigger.InputBinding>
-                                <cm:ActionMessage MethodName="Search">
-                                    <cm:Parameter Value="{x:Static search:SearchType.Next}" />
-                                </cm:ActionMessage>
-                            </s:InputBindingTrigger>
-                        </i:Interaction.Triggers>
-                    </TextBox>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Name="SearchTextBox" Grid.Column="0" Text="{Binding SearchSettings.SearchTerm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="5,0,0,0" MinWidth="300" TextWrapping="Wrap" VerticalContentAlignment="Center">
+                            <i:Interaction.Triggers>
+                                <i:EventTrigger EventName="TextChanged">
+                                    <cm:ActionMessage MethodName="Search">
+                                        <cm:Parameter Value="{x:Static search:SearchType.Normal}" />
+                                    </cm:ActionMessage>
+                                </i:EventTrigger>
+                                <s:InputBindingTrigger>
+                                    <s:InputBindingTrigger.InputBinding>
+                                        <KeyBinding Key="Enter" />
+                                    </s:InputBindingTrigger.InputBinding>
+                                    <cm:ActionMessage MethodName="Search">
+                                        <cm:Parameter Value="{x:Static search:SearchType.Next}" />
+                                    </cm:ActionMessage>
+                                </s:InputBindingTrigger>
+                            </i:Interaction.Triggers>
+                        </TextBox>
+                        <TextBox Name="ReplaceTextBox" Grid.Column="1" Text="{Binding SearchSettings.ReplaceTerm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="5,0,0,0" MinWidth="300" TextWrapping="Wrap" VerticalContentAlignment="Center">
+                            <i:Interaction.Triggers>
+                                <i:EventTrigger EventName="TextChanged">
+                                    <cm:ActionMessage MethodName="Search">
+                                        <cm:Parameter Value="{x:Static search:SearchType.Normal}" />
+                                    </cm:ActionMessage>
+                                </i:EventTrigger>
+                                <s:InputBindingTrigger>
+                                    <s:InputBindingTrigger.InputBinding>
+                                        <KeyBinding Key="Enter" />
+                                    </s:InputBindingTrigger.InputBinding>
+                                    <cm:ActionMessage MethodName="Search">
+                                        <cm:Parameter Value="{x:Static search:SearchType.Replace}" />
+                                    </cm:ActionMessage>
+                                </s:InputBindingTrigger>
+                            </i:Interaction.Triggers>
+                        </TextBox>
+                    </Grid>
                 </DockPanel>
             </Border>
         </Grid>

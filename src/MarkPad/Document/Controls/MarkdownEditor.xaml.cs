@@ -51,6 +51,7 @@ namespace MarkPad.Document.Controls
             CommandBindings.Add(new CommandBinding(FormattingCommands.SetHyperlink, (x, y) => SetHyperlink(), CanEditDocument));
 
             var overtypeMode = new OvertypeMode();
+            var autoPairedCharacters = new AutoPairedCharacters();
 
             editorPreviewKeyDownHandlers = new IHandle<EditorPreviewKeyDownEvent>[] {
                 new CopyLeadingWhitespaceOnNewLine(),
@@ -60,10 +61,12 @@ namespace MarkPad.Document.Controls
                 new HardLineBreak(),
                 overtypeMode,
                 new AutoContinueLists(),
-                new IndentLists(()=>IndentType)
+                new IndentLists(()=>IndentType),
+                autoPairedCharacters
             };
             editorTextEnteringHandlers = new IHandle<EditorTextEnteringEvent>[] {
-                overtypeMode
+                overtypeMode,
+                autoPairedCharacters
             };
         }
 
@@ -344,17 +347,33 @@ namespace MarkPad.Document.Controls
                 return;
             }
 
+            var misspelledWord = editor.Document.GetText(misspelledSegment);
+            var contextMenuItems = new List<object>(SpellCheckProvider.GetSpellcheckSuggestions(misspelledWord));
+            contextMenuItems.Add(new Separator());
+            contextMenuItems.Add(new DelegateCommand("Add to dictionary", obj =>
+                {
+                    SpellCheckProvider.AddWordToCustomDictionary(misspelledWord);
+                    Editor.TextArea.TextView.Redraw();
+                }));
+
+            EditorContextMenu.ItemsSource = contextMenuItems;
             EditorContextMenu.Tag = misspelledSegment;
-            EditorContextMenu.ItemsSource = SpellCheckProvider.GetSpellcheckSuggestions(editor.Document.GetText(misspelledSegment));
             e.Handled = false;
         }
 
         void SpellcheckerWordClick(object sender, RoutedEventArgs e)
         {
-            var word = (string)(e.OriginalSource as FrameworkElement).DataContext;
-            var segment = (TextSegment)EditorContextMenu.Tag;
-            Editor.Document.Replace(segment, word);
-         }
+            var clicked = (e.OriginalSource as FrameworkElement).DataContext;
+            if (clicked is ICommand)
+            {
+                ((ICommand)clicked).Execute(null);
+            }
+            else if (clicked is string)
+            {
+                var segment = (TextSegment)EditorContextMenu.Tag;
+                Editor.Document.Replace(segment, (string)clicked);
+            }
+        }
 
         public static readonly DependencyProperty SpellcheckProviderProperty =
             DependencyProperty.Register("SpellCheckProvider", typeof (ISpellCheckProvider), typeof (MarkdownEditor), new PropertyMetadata(default(ISpellCheckProvider)));
@@ -363,6 +382,15 @@ namespace MarkPad.Document.Controls
         {
             get { return (ISpellCheckProvider) GetValue(SpellcheckProviderProperty); }
             set { SetValue(SpellcheckProviderProperty, value); }
+        }
+
+        public static readonly DependencyProperty PairedCharsHighlightProviderProperty =
+            DependencyProperty.Register("PairedCharsHighlightProvider", typeof(IPairedCharsHighlightProvider), typeof(MarkdownEditor), new PropertyMetadata(default(IPairedCharsHighlightProvider)));
+
+        public IPairedCharsHighlightProvider PairedCharacterHighlightingProvider
+        {
+            get { return (IPairedCharsHighlightProvider)GetValue(PairedCharsHighlightProviderProperty); }
+            set { SetValue(PairedCharsHighlightProviderProperty, value); }
         }
 
         public static readonly DependencyProperty IsColorsInvertedProperty =
